@@ -16,12 +16,14 @@ import java.security.Key;
 
 @Mixin(ServerLoginNetworkHandler.class)
 public class ServerLoginNetworkHandlerMixin {
-    @Shadow @Final ClientConnection connection;
+    @Shadow
+    @Final
+    ClientConnection connection;
 
     @Redirect(method = "onKey", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/encryption/NetworkEncryptionUtils;cipherFromKey(ILjava/security/Key;)Ljavax/crypto/Cipher;"))
     private Cipher onKey$initializeVelocityCipher(int ignored1, Key secretKey) throws GeneralSecurityException {
         // Hijack this portion of the cipher initialization and set up our own encryption handler.
-        ((ClientConnectionEncryptionExtension) this.connection).setupEncryption((SecretKey) secretKey);
+        ((ClientConnectionEncryptionExtension) this.connection).krypton$setupEncryption((SecretKey) secretKey);
 
         // Turn the operation into a no-op.
         return null;

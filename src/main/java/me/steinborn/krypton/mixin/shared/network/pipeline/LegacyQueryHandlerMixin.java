@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LegacyQueryHandler.class)
 public abstract class LegacyQueryHandlerMixin {
     @Inject(method = "channelRead", at = @At(value = "HEAD"), cancellable = true)
-    public void channelRead(ChannelHandlerContext ctx, Object msg, CallbackInfo ci) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg, CallbackInfo ci) {
         if (!ctx.channel().isActive()) {
             ((ByteBuf) msg).clear();
             ci.cancel();

@@ -1,7 +1,6 @@
 package me.steinborn.krypton.mod.shared;
 
 import com.velocitypowered.natives.util.Natives;
-import io.netty.util.ResourceLeakDetector;
 import net.fabricmc.api.ModInitializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +23,6 @@ public class KryptonSharedInitializer implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Compression will use " + Natives.compress.getLoadedVariant() + ", encryption will use " + Natives.cipher.getLoadedVariant());
+        LOGGER.info("Compression will use {}, encryption will use {}", Natives.compress.getLoadedVariant(), Natives.cipher.getLoadedVariant());
     }
 }

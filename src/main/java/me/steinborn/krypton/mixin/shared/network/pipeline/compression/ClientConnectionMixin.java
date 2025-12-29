@@ -11,6 +11,7 @@ import net.minecraft.network.handler.PacketDeflater;
 import net.minecraft.network.handler.PacketInflater;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -57,10 +58,12 @@ public class ClientConnectionMixin {
         ci.cancel();
     }
 
+    @Unique
     private static boolean isKryptonOrVanillaDecompressor(Object o) {
         return o instanceof PacketInflater || o instanceof MinecraftCompressDecoder;
     }
 
+    @Unique
     private static boolean isKryptonOrVanillaCompressor(Object o) {
         return o instanceof PacketDeflater || o instanceof MinecraftCompressEncoder;
     }

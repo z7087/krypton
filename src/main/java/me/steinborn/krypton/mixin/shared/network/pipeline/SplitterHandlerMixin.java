@@ -25,7 +25,7 @@ public class SplitterHandlerMixin {
      * @reason Use optimized Velocity varint decoder that reduces bounds checking
      */
     @Overwrite
-    public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         if (!ctx.channel().isActive()) {
             in.clear();
             return;

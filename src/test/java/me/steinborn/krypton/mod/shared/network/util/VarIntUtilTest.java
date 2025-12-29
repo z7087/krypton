@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class VarIntUtilTest {
 
     private static int vanillaGetVarLongLength(long value) {
-        for(int i = 1; i < 10; ++i) {
+        for (int i = 1; i < 10; ++i) {
             if ((value & -1L << i * 7) == 0L) {
                 return i;
             }
