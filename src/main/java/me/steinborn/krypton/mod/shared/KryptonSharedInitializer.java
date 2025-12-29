@@ -1,12 +1,18 @@
 package me.steinborn.krypton.mod.shared;
 
 import com.velocitypowered.natives.util.Natives;
+import me.z7087.final2constant.Constant;
+import me.z7087.final2constant.DynamicConstant;
 import net.fabricmc.api.ModInitializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+
 public class KryptonSharedInitializer implements ModInitializer {
+    public static final String MOD_ID = "krypton";
     private static final Logger LOGGER = LogManager.getLogger(KryptonSharedInitializer.class);
+    private static final DynamicConstant<Config> DC_CONFIG = Constant.factory.ofMutable(null);
 
     static {
         // By default, Netty allocates 16MiB arenas for the PooledByteBufAllocator. This is too much
@@ -23,6 +29,28 @@ public class KryptonSharedInitializer implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        Config config = Config.loadFromFile();
+        if (config == null) {
+            config = Config.createDefaultConfig();
+            setConfig(config);
+            tryToSaveConfig();
+        }
         LOGGER.info("Compression will use {}, encryption will use {}", Natives.compress.getLoadedVariant(), Natives.cipher.getLoadedVariant());
+    }
+
+    public static void tryToSaveConfig() {
+        try {
+            Config.saveToFile(getConfig());
+        } catch (IOException e) {
+            LOGGER.error("config saving failed: {}", e.getMessage(), e);
+        }
+    }
+
+    public static Config getConfig() {
+        return DC_CONFIG.orElseThrow();
+    }
+
+    public static void setConfig(Config config) {
+        DC_CONFIG.set(config);
     }
 }

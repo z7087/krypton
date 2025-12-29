@@ -28,6 +28,7 @@ repositories {
     strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
     strictMaven("https://repo.papermc.io/repository/maven-public/", "PaperMC", "com.velocitypowered")
+    strictMaven("https://jitpack.io", "JitPack", "com.github.z7087")
 }
 
 dependencies {
@@ -48,6 +49,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     include(modImplementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT")!!)
+    include(modImplementation("com.github.z7087:final2constant:37a189f903")!!)
     //fapi("fabric-lifecycle-events-v1", "fabric-resource-loader-v0", "fabric-content-registries-v0")
 }
 
