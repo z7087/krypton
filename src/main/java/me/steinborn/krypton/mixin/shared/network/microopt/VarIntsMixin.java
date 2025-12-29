@@ -2,10 +2,10 @@ package me.steinborn.krypton.mixin.shared.network.microopt;
 
 import io.netty.buffer.ByteBuf;
 import me.steinborn.krypton.mod.shared.network.util.VarIntUtil;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.encoding.VarInts;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(VarInts.class)
 public class VarIntsMixin {
@@ -38,6 +38,7 @@ public class VarIntsMixin {
         return buf;
     }
 
+    @Unique
     private static void writeVarIntFull(ByteBuf buf, int value) {
         // See https://steinborn.me/posts/performance/how-fast-can-you-write-a-varint/
         if ((value & (0xFFFFFFFF << 7)) == 0) {
