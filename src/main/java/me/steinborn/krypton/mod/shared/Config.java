@@ -43,7 +43,8 @@ public abstract class Config {
             );
             final String[][] immutableNamesAndDescriptors = JavaHelper.getNamesAndDescriptors(
                     MethodHandles.lookup(),
-                    (Supplier<DynamicConstant<Boolean>> & Serializable) configEmptyImpl::permitOversizedPackets
+                    (Supplier<DynamicConstant<Boolean>> & Serializable) configEmptyImpl::permitOversizedPackets,
+                    (Supplier<DynamicConstant<Boolean>> & Serializable) configEmptyImpl::useLSHL
             );
             immutableNames = immutableNamesAndDescriptors[0];
             immutableDescriptors = immutableNamesAndDescriptors[1];
@@ -65,10 +66,12 @@ public abstract class Config {
 
     public static Config createInstance() {
         final DynamicConstant<Boolean> permitOversizedPackets = Constant.factory.ofMutable(false);
+        final DynamicConstant<Boolean> useLSHL = Constant.factory.ofMutable(false);
 
         try {
             return (Config) CONSTRUCTOR.invokeExact(
-                    permitOversizedPackets
+                    permitOversizedPackets,
+                    useLSHL
             );
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -77,6 +80,7 @@ public abstract class Config {
 
 
     abstract DynamicConstant<Boolean> permitOversizedPackets();
+    abstract DynamicConstant<Boolean> useLSHL();
 
 
     public static Config createDefaultConfig() {
@@ -140,11 +144,20 @@ public abstract class Config {
         permitOversizedPackets().set(permitOversizedPackets);
     }
 
+    public final boolean isUseLSHL() {
+        return useLSHL().orElseThrow();
+    }
+
+    public final void setUseLSHL(boolean useLSHL) {
+        useLSHL().set(useLSHL);
+    }
+
     private static final class ConfigTypeAdapter extends TypeAdapter<Config> {
         @Override
         public void write(JsonWriter out, Config config) throws IOException {
             out.beginObject();
             out.name("permit-oversized-packets").value(config.isPermitOversizedPackets());
+            out.name("use-LSHL").value(config.isPermitOversizedPackets());
             out.endObject();
         }
 
@@ -157,6 +170,10 @@ public abstract class Config {
                 switch (name) {
                     case "permit-oversized-packets": {
                         config.setPermitOversizedPackets(in.nextBoolean());
+                        break;
+                    }
+                    case "use-LSHL": {
+                        config.setUseLSHL(in.nextBoolean());
                         break;
                     }
                     default: {

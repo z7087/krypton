@@ -12,7 +12,7 @@ import java.io.IOException;
 public class KryptonSharedInitializer implements ModInitializer {
     public static final String MOD_ID = "krypton";
     private static final Logger LOGGER = LogManager.getLogger(KryptonSharedInitializer.class);
-    private static final DynamicConstant<Config> DC_CONFIG = Constant.factory.ofMutable(null);
+    private static final DynamicConstant<Config> DC_CONFIG = Constant.factory.ofVolatile(null);
 
     static {
         // By default, Netty allocates 16MiB arenas for the PooledByteBufAllocator. This is too much

@@ -5,8 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import me.steinborn.krypton.mod.shared.KryptonSharedInitializer;
-import net.minecraft.network.PacketByteBuf;
-
+import net.minecraft.network.FriendlyByteBuf;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -33,12 +32,12 @@ public class MinecraftCompressDecoder extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        PacketByteBuf bb = new PacketByteBuf(in);
+        FriendlyByteBuf bb = new FriendlyByteBuf(in);
         int claimedUncompressedSize = bb.readVarInt();
         if (claimedUncompressedSize == 0) {
-            int actualUncompressedSize = in.readableBytes();
-            checkState(actualUncompressedSize < threshold, "Actual uncompressed size %s is greater than"
-                    + " threshold %s", actualUncompressedSize, threshold);
+            //int actualUncompressedSize = in.readableBytes();
+            //checkState(actualUncompressedSize < threshold, "Actual uncompressed size %s is greater than"
+            //        + " threshold %s", actualUncompressedSize, threshold);
             out.add(in.retain());
             return;
         }
