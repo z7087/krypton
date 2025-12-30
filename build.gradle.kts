@@ -1,3 +1,5 @@
+import dev.kikugie.semver.data.SemanticVersion
+
 plugins {
     id("net.fabricmc.fabric-loom-remap")
 
@@ -25,10 +27,15 @@ repositories {
         forRepository { maven(url) { name = alias } }
         filter { groups.forEach(::includeGroup) }
     }
+//    maven {
+//        name = 'ParchmentMC'
+//        url = 'https://maven.parchmentmc.org'
+//    }
     strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
     strictMaven("https://repo.papermc.io/repository/maven-public/", "PaperMC", "com.velocitypowered")
     strictMaven("https://jitpack.io", "JitPack", "com.github.z7087")
+    strictMaven("https://maven.parchmentmc.org", "ParchmentMC", "org.parchmentmc.data")
 }
 
 dependencies {
@@ -41,7 +48,16 @@ dependencies {
     }
 
     minecraft("com.mojang:minecraft:${sc.current.version}")
-    mappings("net.fabricmc:yarn:1.21.10+build.3:v2")
+    @Suppress("UnstableApiUsage")
+    mappings(
+        if (hasProperty("deps.parchment"))
+            loom.layered {
+                officialMojangMappings()
+                parchment("org.parchmentmc.data:parchment-${property("deps.parchment")}@zip")
+            }
+        else
+            loom.officialMojangMappings()
+    )
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
 
 
@@ -54,14 +70,19 @@ dependencies {
     include(implementation("com.github.z7087:final2constant:37a189f903") {
         isTransitive = false
     })
+    include(implementation("com.github.z7087:Incubatorapiloader:1384bceed4")!!)
     //fapi("fabric-lifecycle-events-v1", "fabric-resource-loader-v0", "fabric-content-registries-v0")
 }
 
-/*
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile::class) {
     options.encoding = "UTF-8"
+    options.compilerArgs.add("-Xlint:deprecation")
+    options.compilerArgs.add("-Xlint:unchecked")
+    if (requiredJava >= JavaVersion.VERSION_16)
+        options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+    if (requiredJava <= JavaVersion.VERSION_1_8)
+        options.compilerArgs.add("-Xlint:-options")
 }
-*/
 
 loom {
     fabricModJsonPath = rootProject.file("src/main/resources/fabric.mod.json") // Useful for interface injection
@@ -92,7 +113,6 @@ tasks.test {
 
 tasks.jar {
     from(rootProject.file("LICENSE"))
-    //from "LICENSE"
 }
 
 tasks {
@@ -122,6 +142,10 @@ tasks {
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
     }
+}
+
+stonecutter {
+    dependencies["java"] = requiredJava.majorVersion
 }
 
 /*

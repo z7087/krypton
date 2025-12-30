@@ -18,12 +18,16 @@ stonecutter tasks {
 stonecutter parameters {
     swaps["mod_version"] = "\"${property("mod.version")}\";"
     swaps["minecraft"] = "\"${node.metadata.version}\";"
+    //swaps["java"] =
     constants["release"] = property("mod.id") != "template"
     dependencies["fapi"] = node.project.property("deps.fabric_api") as String
 
     replacements {
         string(current.parsed >= "1.21.11") {
             replace("ResourceLocation", "Identifier")
+        }
+        string(current.parsed >= "1.21.4") {
+            replace("NoOpFrameEncoder", "LocalFrameEncoder")
         }
     }
 }

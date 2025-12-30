@@ -7,13 +7,13 @@ import me.steinborn.krypton.mod.shared.misc.KryptonPipelineEvent;
 import me.steinborn.krypton.mod.shared.network.ClientConnectionEncryptionExtension;
 import me.steinborn.krypton.mod.shared.network.pipeline.MinecraftCipherDecoder;
 import me.steinborn.krypton.mod.shared.network.pipeline.MinecraftCipherEncoder;
-import net.minecraft.network.ClientConnection;
+import net.minecraft.network.Connection;
 import org.spongepowered.asm.mixin.*;
 
 import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 
-@Mixin(ClientConnection.class)
+@Mixin(Connection.class)
 public class ClientConnectionMixin implements ClientConnectionEncryptionExtension {
     @Shadow
     private boolean encrypted;

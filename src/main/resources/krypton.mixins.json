@@ -10,6 +10,7 @@
     "shared.network.microopt.EntityTrackerEntryMixin",
     "shared.network.microopt.StringEncodingMixin",
     "shared.network.microopt.VarIntsMixin",
+    "shared.network.microopt.VarLongsMixin",
     "shared.network.pipeline.LegacyQueryHandlerMixin",
     "shared.network.pipeline.SplitterHandlerMixin",
     "shared.network.pipeline.compression.ClientConnectionMixin",
