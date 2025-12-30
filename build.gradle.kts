@@ -48,8 +48,12 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    include(modImplementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT")!!)
-    include(modImplementation("com.github.z7087:final2constant:37a189f903")!!)
+    include(implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
+        isTransitive = false
+    })
+    include(implementation("com.github.z7087:final2constant:37a189f903") {
+        isTransitive = false
+    })
     //fapi("fabric-lifecycle-events-v1", "fabric-resource-loader-v0", "fabric-content-registries-v0")
 }
 
@@ -69,6 +73,8 @@ loom {
 
     runConfigs.all {
         ideConfigGenerated(true)
+        property("fabric.development=true")
+        property("mixin.hotSwap")
         vmArgs("-Dmixin.debug.export=true") // Exports transformed classes for debugging
         runDir = "../../run" // Shares the run directory between versions
     }
