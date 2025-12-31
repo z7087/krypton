@@ -6,6 +6,8 @@ import me.steinborn.krypton.mod.shared.KryptonSharedInitializer;
 import me.z7087.final2constant.Constant;
 import me.z7087.final2constant.DynamicConstant;
 import me.z7087.ial.IncubatorApiLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -16,10 +18,10 @@ import java.lang.invoke.MethodType;
  * from zero to 32.
  */
 public class VarIntUtil {
-    private static final int MASK_7_BITS = -1 << 7;
-    private static final int MASK_14_BITS = -1 << 14;
-    private static final int MASK_21_BITS = -1 << 21;
-    private static final int MASK_28_BITS = -1 << 28;
+    public static final int MASK_7_BITS = -1 << 7;
+    public static final int MASK_14_BITS = -1 << 14;
+    public static final int MASK_21_BITS = -1 << 21;
+    public static final int MASK_28_BITS = -1 << 28;
     private static final byte[] VARINT_EXACT_BYTE_LENGTHS = new byte[33];
 
     static {
@@ -29,29 +31,72 @@ public class VarIntUtil {
         VARINT_EXACT_BYTE_LENGTHS[32] = 1; // Special case for 0.
     }
 
+    static final Logger LOGGER = LogManager.getLogger(VarIntUtil.class);
+
     public static int getVarIntLength(int value) {
         return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(value)];
     }
 
-    private static final DynamicConstant<VarIntProvider> DC_PROVIDER = Constant.factory.ofVolatile(null);
-
     public static void write(ByteBuf buf, int value) {
-        DC_PROVIDER.orElseThrow().write(buf, value);
-    }
-
-    public static void setProvider(VarIntProvider provider) {
-        DC_PROVIDER.set(provider);
+        KryptonSharedInitializer.getConfig().getVarIntProvider().write(buf, value);
     }
 
     public interface VarIntProvider {
+        String getName();
+
         void write(ByteBuf buf, int value);
+
+        static VarIntProvider forName(String name) {
+            final VarIntProvider result;
+            switch (name) {
+                case MC.NAME: {
+                    result = MC.getInstance();
+                    break;
+                }
+                case Astei.NAME: {
+                    result = Astei.getInstance();
+                    break;
+                }
+                case VectorSIMD.NAME: {
+                    result = VectorSIMD.getInstance();
+                    break;
+                }
+                case BMI2.NAME: {
+                    result = BMI2.getInstance();
+                    break;
+                }
+                case SWAR.NAME: {
+                    result = SWAR.getInstance();
+                    break;
+                }
+                default: {
+                    result = null;
+                }
+            }
+            if (result != null) {
+                return result;
+            }
+            LOGGER.warn("Unknown or non-available VarIntProvider \"{}\"", name);
+            return getDefaultProvider();
+        }
+
+        static VarIntProvider getDefaultProvider() {
+            return Astei.getInstance();
+        }
     }
 
     static final class MC implements VarIntProvider {
+        public static final String NAME = "Minecraft";
         private static final MC INSTANCE = new MC();
         static VarIntProvider getInstance() {
             return INSTANCE;
         }
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
         @Override
         public void write(ByteBuf buf, int value) {
             while ((value & MASK_7_BITS) != 0) {
@@ -63,10 +108,17 @@ public class VarIntUtil {
     }
 
     static final class Astei implements VarIntProvider {
+        public static final String NAME = "Astei";
         private static final Astei INSTANCE = new Astei();
         static VarIntProvider getInstance() {
             return INSTANCE;
         }
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
         @Override
         public void write(ByteBuf buf, int value) {
             // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
@@ -105,8 +157,17 @@ public class VarIntUtil {
     }
 
     static final class VectorSIMD implements VarIntProvider {
+        public static final String NAME = "VectorSIMD";
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
+        //? if java: >= 16 {
         private static final DynamicConstant<Boolean> DC_LOADED = Constant.factory.ofVolatile(null);
         private static final VectorSIMD INSTANCE = new VectorSIMD();
+
         static VarIntProvider getInstance() {
             Boolean loaded = DC_LOADED.get();
             if (loaded == null) {
@@ -147,9 +208,9 @@ public class VarIntUtil {
                     , VectorSIMDConstants.SHUFFLE_MASK // why the mask speeds up the shuffle???
             ).reinterpretAsInts().lane(0);
             if ((value & MASK_21_BITS) == 0) {
-                buf.writeMediumLE(w | 0x808000);
+                buf.writeMediumLE(w | 0x8080);
             } else if ((value & MASK_28_BITS) == 0) {
-                buf.writeIntLE(w | 0x80808000);
+                buf.writeIntLE(w | 0x808080);
             } else {
                 buf.writeIntLE(w | 0x80808080);
                 buf.writeByte(value >>> 28);
@@ -178,9 +239,19 @@ public class VarIntUtil {
                     false, false, false, false
             );
         }
+        //? } else {
+        /*static VarIntProvider getInstance() {
+            return null;
+        }
+        @Override
+        public void write(ByteBuf buf, int value) {
+            throw new UnsupportedOperationException();
+        }
+        *///? }
     }
     
     static final class BMI2 implements VarIntProvider {
+        public static final String NAME = "BMI2";
         public static final int MASK = 0x7F7F7F7F;
         private static final MethodHandle MH_INTEGER_EXPAND;
         static {
@@ -197,6 +268,11 @@ public class VarIntUtil {
         private static final BMI2 INSTANCE = new BMI2();
         static VarIntProvider getInstance() {
             return (MH_INTEGER_EXPAND != null) ? INSTANCE : null;
+        }
+
+        @Override
+        public String getName() {
+            return NAME;
         }
 
         @Override
@@ -229,6 +305,51 @@ public class VarIntUtil {
                 buf.writeIntLE(w | 0x80808080);
                 buf.writeByte(value >>> 28);
             }
+        }
+    }
+
+    static final class SWAR implements VarIntProvider {
+        public static final String NAME = "SWAR";
+        private static final SWAR INSTANCE = new SWAR();
+        static VarIntProvider getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public String getName() {
+            return NAME;
+        }
+
+        @Override
+        public void write(ByteBuf buf, int value) {
+            if ((value & MASK_7_BITS) == 0) {
+                buf.writeByte(value);
+            } else if ((value & MASK_14_BITS) == 0) {
+                buf.writeShortLE((value & 0x7F) | ((value & 0x3F80) << 1) | 0x80);
+            } else {
+                writeVarIntFull(buf, value);
+            }
+        }
+
+        private static void writeVarIntFull(ByteBuf buf, int value) {
+            int w = expand28to32(value);
+            if ((value & MASK_21_BITS) == 0) {
+                buf.writeMediumLE(w | 0x8080);
+            } else if ((value & MASK_28_BITS) == 0) {
+                buf.writeIntLE(w | 0x808080);
+            } else {
+                buf.writeIntLE(w | 0x80808080);
+                buf.writeByte(value >>> 28);
+            }
+        }
+
+        private static int expand28to32(int value) {
+
+            value = (value & 0x00003FFF) | ((value & 0x0FFFC000) << 2);
+
+            value = (value & 0x007F007F) | ((value & 0x3F803F80) << 1);
+
+            return value;
         }
     }
 }

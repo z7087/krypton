@@ -5,6 +5,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import me.steinborn.krypton.mod.shared.network.util.VarIntUtil;
+import me.steinborn.krypton.mod.shared.network.util.VarLongUtil;
 import me.z7087.final2constant.Constant;
 import me.z7087.final2constant.DynamicConstant;
 import me.z7087.final2constant.util.JavaHelper;
@@ -44,7 +46,9 @@ public abstract class Config {
             final String[][] immutableNamesAndDescriptors = JavaHelper.getNamesAndDescriptors(
                     MethodHandles.lookup(),
                     (Supplier<DynamicConstant<Boolean>> & Serializable) configEmptyImpl::permitOversizedPackets,
-                    (Supplier<DynamicConstant<Boolean>> & Serializable) configEmptyImpl::useLSHL
+                    (Supplier<DynamicConstant<Boolean>> & Serializable) configEmptyImpl::useLSHL,
+                    (Supplier<DynamicConstant<VarIntUtil.VarIntProvider>> & Serializable) configEmptyImpl::varIntProvider,
+            (Supplier<DynamicConstant<VarLongUtil.VarLongProvider>> & Serializable) configEmptyImpl::varLongProvider
             );
             immutableNames = immutableNamesAndDescriptors[0];
             immutableDescriptors = immutableNamesAndDescriptors[1];
@@ -67,11 +71,15 @@ public abstract class Config {
     public static Config createInstance() {
         final DynamicConstant<Boolean> permitOversizedPackets = Constant.factory.ofMutable(false);
         final DynamicConstant<Boolean> useLSHL = Constant.factory.ofMutable(false);
+        final DynamicConstant<VarIntUtil.VarIntProvider> varIntProvider = Constant.factory.ofMutable(VarIntUtil.VarIntProvider.getDefaultProvider());
+        final DynamicConstant<VarLongUtil.VarLongProvider> varLongProvider = Constant.factory.ofMutable(VarLongUtil.VarLongProvider.getDefaultProvider());
 
         try {
             return (Config) CONSTRUCTOR.invokeExact(
                     permitOversizedPackets,
-                    useLSHL
+                    useLSHL,
+                    varIntProvider,
+                    varLongProvider
             );
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -81,6 +89,8 @@ public abstract class Config {
 
     abstract DynamicConstant<Boolean> permitOversizedPackets();
     abstract DynamicConstant<Boolean> useLSHL();
+    abstract DynamicConstant<VarIntUtil.VarIntProvider> varIntProvider();
+    abstract DynamicConstant<VarLongUtil.VarLongProvider> varLongProvider();
 
 
     public static Config createDefaultConfig() {
@@ -152,12 +162,30 @@ public abstract class Config {
         useLSHL().set(useLSHL);
     }
 
+    public final VarIntUtil.VarIntProvider getVarIntProvider() {
+        return varIntProvider().orElseThrow();
+    }
+
+    public final void setVarIntProvider(VarIntUtil.VarIntProvider provider) {
+        varIntProvider().set(provider);
+    }
+
+    public final VarLongUtil.VarLongProvider getVarLongProvider() {
+        return varLongProvider().orElseThrow();
+    }
+
+    public final void setVarLongProvider(VarLongUtil.VarLongProvider provider) {
+        varLongProvider().set(provider);
+    }
+
     private static final class ConfigTypeAdapter extends TypeAdapter<Config> {
         @Override
         public void write(JsonWriter out, Config config) throws IOException {
             out.beginObject();
             out.name("permit-oversized-packets").value(config.isPermitOversizedPackets());
             out.name("use-LSHL").value(config.isPermitOversizedPackets());
+            out.name("varint-provider").value(config.getVarIntProvider().getName());
+            out.name("varlong-provider").value(config.getVarLongProvider().getName());
             out.endObject();
         }
 
@@ -174,6 +202,14 @@ public abstract class Config {
                     }
                     case "use-LSHL": {
                         config.setUseLSHL(in.nextBoolean());
+                        break;
+                    }
+                    case "varint-provider": {
+                        config.setVarIntProvider(VarIntUtil.VarIntProvider.forName(in.nextString()));
+                        break;
+                    }
+                    case "varlong-provider": {
+                        config.setVarLongProvider(VarLongUtil.VarLongProvider.forName(in.nextString()));
                         break;
                     }
                     default: {
