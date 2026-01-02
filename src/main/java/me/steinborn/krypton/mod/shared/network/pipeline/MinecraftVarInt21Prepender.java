@@ -7,17 +7,22 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import java.util.List;
+
+import me.steinborn.krypton.mod.shared.network.util.WellKnownExceptions;
 import net.minecraft.network.VarInt;
 
 @ChannelHandler.Sharable
-public class MinecraftVarintPrepender extends MessageToMessageEncoder<ByteBuf> {
-    public static final MinecraftVarintPrepender INSTANCE = new MinecraftVarintPrepender();
+public class MinecraftVarInt21Prepender extends MessageToMessageEncoder<ByteBuf> {
+    public static final MinecraftVarInt21Prepender INSTANCE = new MinecraftVarInt21Prepender();
     static final boolean IS_JAVA_CIPHER = Natives.cipher.get() == JavaVelocityCipher.FACTORY;
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
         final int length = msg.readableBytes();
         final int varintLength = VarInt.getByteSize(length);
+        if (varintLength > 3) {
+            throw WellKnownExceptions.ENCODING_VARINT21_BIG_CACHED;
+        }
 
         // this isn't optimal (ideally, we would use the trick Velocity uses and combine the prepender and
         // compressor into one), but to maximize mod compatibility, we do this instead
