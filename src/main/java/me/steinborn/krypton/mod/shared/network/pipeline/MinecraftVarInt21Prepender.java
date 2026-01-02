@@ -8,8 +8,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import java.util.List;
 
+import me.steinborn.krypton.mod.shared.network.util.VarIntUtil;
 import me.steinborn.krypton.mod.shared.network.util.WellKnownExceptions;
-import net.minecraft.network.VarInt;
 
 @ChannelHandler.Sharable
 public class MinecraftVarInt21Prepender extends MessageToMessageEncoder<ByteBuf> {
@@ -19,7 +19,7 @@ public class MinecraftVarInt21Prepender extends MessageToMessageEncoder<ByteBuf>
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
         final int length = msg.readableBytes();
-        final int varintLength = VarInt.getByteSize(length);
+        final int varintLength = VarIntUtil.getVarIntLength(length);
         if (varintLength > 3) {
             throw WellKnownExceptions.ENCODING_VARINT21_BIG_CACHED;
         }
@@ -30,7 +30,7 @@ public class MinecraftVarInt21Prepender extends MessageToMessageEncoder<ByteBuf>
                 ? ctx.alloc().heapBuffer(varintLength)
                 : ctx.alloc().directBuffer(varintLength);
 
-        VarInt.write(lenBuf, length);
+        VarIntUtil.write(lenBuf, length);
         out.add(lenBuf);
         out.add(msg.retain());
     }

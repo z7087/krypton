@@ -3,12 +3,12 @@ package me.steinborn.krypton.mixin.shared.network.microopt;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.EncoderException;
+import me.steinborn.krypton.mod.shared.network.util.VarIntUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
 import java.nio.charset.StandardCharsets;
 import net.minecraft.network.Utf8String;
-import net.minecraft.network.VarInt;
 
 @Mixin(Utf8String.class)
 public class StringEncodingMixin {
@@ -27,7 +27,7 @@ public class StringEncodingMixin {
         if (utf8Bytes > maxBytesPermitted) {
             throw new EncoderException("String too big (was " + utf8Bytes + " bytes encoded, max " + maxBytesPermitted + ")");
         } else {
-            VarInt.write(buf, utf8Bytes);
+            VarIntUtil.write(buf, utf8Bytes);
             buf.writeCharSequence(string, StandardCharsets.UTF_8);
         }
     }

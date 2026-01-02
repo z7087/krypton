@@ -22,9 +22,11 @@ public class SplitterHandlerMixin {
     @Unique
     private static final int BREAK_AND_IGNORE_READER_INDEX = -1;
 
+    //? if >=1.20.2 {
     @Shadow
     @Final
     private BandwidthDebugMonitor monitor;
+    //?}
 
     /**
      * @author z7087
@@ -52,9 +54,11 @@ public class SplitterHandlerMixin {
             //    in.resetReaderIndex();
             //}
             out.add(in.readRetainedSlice(length));
+            //? if >=1.20.2 {
             if (this.monitor != null) {
                 this.monitor.onReceive((in.readerIndex() - preIndex));
             }
+            //?}
         }
 
     }
